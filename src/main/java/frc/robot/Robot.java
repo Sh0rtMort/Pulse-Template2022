@@ -1,15 +1,11 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+
 
 package frc.robot;
 
-//Here is all the imports, As you make more code, WPILIB will automatically fill these in to use the corresponding libraries
+import java.sql.Time;
 
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
@@ -17,206 +13,263 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj.Timer;
+
+
+/**                                                  Welcome To Team 2531 "RoboHawks" Intro To Java Programming!
+*                                        This Page and A student will help lead you through the process of making a operate!
+*
+*                  My advice for programming is that the hard part is memorization of the words, and it can be easy to forget what does what. 
+*                  also theres no such thing as a perfect programmer, everyone makes mistakes, so never be disheartened if your code doesnt work.
+*                  final thing, if you ever need help, dont be shy to ask; Robotics kids will be your #1 recource and will answer your question(s)
+*
+*                                     --Thank you for reading this ramble of mine
+*                                     --Kaden Morton, RoboHawks Captain
+*
+*
+*
+*
+* NOTE: The theme can be changed so that you can read it better, if this is hard to read, ->
+* Use Ctrl+Shift+P to open the Command prompt, then type theme
+* Do not do this unless a member of the robohawks has shown you what to do
+*
+*
+*
+*
+*
+*
+*
+*
+*  How this page will work : There are some less cool things about robotics programming, so i have already filled those out to keep this fun
+*  Here are the steps i use to make the Robot, Ill say if there already Done :)
+*
+*  #1 Define Motors, Encoders, Drivetrains, MotorControllerGroups, and Controllers(This is done cause its boring) ->
+*  #2
+*
+*/
 
 
 
 public class Robot extends TimedRobot {
-  //here is where you will want to initialize all of your Commands, Motors, Features, and furtherMore
-
-  //below is the SmartDashboard AutoChooser Being Initialized
+  //Ignore this Stuff, Its Booooooring(But very very needed!) :(
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  /*below is the control system being initialized
-  *on 2531, We really have only used Two types of Controllers, Xbox/PS4 and Joysticks
-  *these controllers are bascially initialized the same but will use differnt inputs and values to control
-  *Here we will not be looking into using the buttons(We will Later in the Command Based Structure), but rather the X & Y axis of the controllers
-  */
-  //here is what each one looks like
-  private final XboxController kXbController = new XboxController(0);
-  private final Joystick kPlaneJoystick = new Joystick(2);
+  //this creates a controller to be used in TeleOp
+  private XboxController gamepad = new XboxController(0);
 
+  //this creates a timer to be used in Auto code
+  private Timer timer = new Timer();
 
-  //Here is where you will initalize Motors and encoders
-  private final Talon leftMotor = new Talon(0);
-  private final Talon rightMotor = new Talon(1);
-  private final Talon kFakeMotor1 = new Talon(2);
-  private final Talon kFakeMotor2 = new Talon(3);
+  //these sould be TalonFX but i cant install the pheonix library cause norton security
+  private Talon frontLeft = new Talon(32);
+  private Talon frontRight = new Talon(31);
+  private Talon backRight = new Talon(30);
+  private Talon backLeft = new Talon(33);
 
-  //private final Talon shooterMotor = new Talon(4);
+  //this connects the motors so that differential drive works
+  private MotorControllerGroup leftGroup = new MotorControllerGroup(frontLeft, backLeft);
+  private MotorControllerGroup rightGroup = new MotorControllerGroup(frontRight, backRight);
+
+  //this enables mecanum drive using all four wheels independently
+  private MecanumDrive mecanumDrive = new MecanumDrive(frontLeft, frontRight, backLeft, backRight);
+  //this enables differential drive all four wheels dependently, used for 'basic' drives
+  private DifferentialDrive differentialDrive = new DifferentialDrive(leftGroup, rightGroup);
   
-
-  private final MotorControllerGroup rightGroup = new MotorControllerGroup(rightMotor, kFakeMotor2);
-  private final MotorControllerGroup leftGroup = new MotorControllerGroup(leftMotor, kFakeMotor1);
-
-  //these are encoders, used to get how much a motor has moved
-  private final Encoder leftEncoder = new Encoder(0, 2);
-  private final Encoder rigthEncoder = new Encoder(1, 3, true);
-
-  //Here is the timer for the TimedRobot Auto
-  private final Timer timer = new Timer();
-
-  //Here is where we want to establish what drive system we want to use
-
-  //This Differential is only using two Motors, if we had made a drive train with two motors per side, we would need to use a motorContollerGroup
-  private final DifferentialDrive differentialDrive = new DifferentialDrive(leftMotor, rightMotor);
-  private final MecanumDrive mecanumDrive = new MecanumDrive(leftMotor, kFakeMotor1, rightMotor, kFakeMotor2);
-  private final DifferentialDrive kMultiMotorDrive = new DifferentialDrive(leftGroup, rightGroup);
-
-  //part of kadens go to way
-  private SendableChooser<Command> autoChooser = new SendableChooser<>();
-
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
   @Override
   public void robotInit() {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-    
 
-    //Something to remember is to reverse the direction of one sides motors and encoders so both sides have the same "foward"
-    rightMotor.setInverted(true);
-    leftMotor.setInverted(false);
+    leftGroup.setInverted(true);
+    rightGroup.setInverted(false);
   }
-
-  /**
-   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics
-   * that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
-  @Override
-  public void robotPeriodic() {}
-
-  /**
-   * This autonomous (along with the chooser code above) shows how to select between different
-   * autonomous modes using the dashboard. The sendable chooser code works with the Java
-   * SmartDashboard. If you prefer the LabVIEW Dashboard, remove all of the chooser code and
-   * uncomment the getString line to get the auto name from the text box below the Gyro
-   *
-   * <p>You can add additional auto modes by adding additional comparisons to the switch structure
-   * below with additional strings. If using the SendableChooser make sure to add them to the
-   * chooser code above as well.
-   */
-  @Override
-  public void autonomousInit() {
-    timer.reset();
-    timer.start();
-    m_autoSelected = m_chooser.getSelected();
-   //m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-    System.out.println("Auto selected: " + m_autoSelected);
-  }
-
-
-    public void AutoCommand() {
-      //differentialDrive.curvatureDrive(0.6, 0.4, false);
-    }
-  /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {
-
-    //this is one way for you to make a auto chooser command work
-    //this is not my go to way(ill show mine soon), but it does work and its simple
-      switch (m_autoSelected) {
-        case kCustomAuto:
-        //Custom Auto Goes Here
-        //here Should be An if-then Statement
-        break;
-        case kDefaultAuto:
-        Default:
-        //Default Auto Goes here
-        //This Will Also be An if-Then Statment, but make this less than Three lines of code(For a challenge, not required
-        break;
-      }
-    
-      //this is my go to way
-      autoChooser.addOption("Auto Path 1", null);
-      //the issue with this is that i cannot show how it works within a timed robot because it uses commands, so for now stick to switch and case
-
 
   
-                    /*example code*/
-    /*  switch (m_autoSelected) {
+
+  @Override
+  public void robotPeriodic() {
+
+  }
+
+  
+
+
+  @Override
+  public void autonomousInit() {
+    m_autoSelected = m_chooser.getSelected();
+    // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
+    System.out.println("Auto selected: " + m_autoSelected);
+    timer.reset();
+    timer.start();
+  }
+
+ //here is where you will actually have fun programming
+
+
+ //Explanation : Here is the autonomous command, Every Year; the first 15 seconds of every match is a period called autonomous period
+ //during this, the robots all run on pre-programmed code, no human input
+ //this is what I(Kaden) find facinating
+ //Here is one of our teams autos: "https://www.youtube.com/embed/kirFwqO6Rp4?start=5" 
+
+  @Override
+  public void autonomousPeriodic() {
+    switch (m_autoSelected) {
       case kCustomAuto:
-      if (timer.get() < 2) {
-        shooterMotor.set(1);
-      } else if (timer.get() < 4 && timer.get() > 2) {
-        differentialDrive.arcadeDrive(0, 0.4);
-      } else if (timer.get() < 6 && timer.get() > 4) {
-        differentialDrive.arcadeDrive(0.6, 0);
-      } else {
-        differentialDrive.stopMotor();
-      }
+        // Put custom auto code here
+        //Custom code is what will run when "Custom Auto" is selected
+        //HINT: use an if() {then} statement to run the code and use the timer.get() function as a parameter
+
+
         break;
       case kDefaultAuto:
       default:
-        if (timer.get() < 10) {
-          differentialDrive.arcadeDrive(0.2, 0);
-        } else {
-          differentialDrive.arcadeDrive(0, 0.4);
-        }
+        // Put default auto code here
+        //Default code will run when "Default Auto" is selected
+        //Ill make a default code so that you can use a template to make a custom Code!
+      if (timer.get() < 2) {
+        differentialDrive.curvatureDrive(0.4, 0.2, false);
+      } else {
+        differentialDrive.curvatureDrive(0, 0.1, true);
+      }
         break;
+      //What this does
+      //the first thing the code does is it gets the timer(means that it tells the robot what time it is)
+      //and it allows the parameter to be active for two seconds.
+      //when the timer is less than two, it will drive forward and turn at the same time, making a curved path
+      //in the else statement, it stops the motors and prevents the robot from driving
     }
-    */
   }
-  /** This function is called once when teleop is enabled. */
+
+
+
   @Override
   public void teleopInit() {
     timer.stop();
   }
 
-  /** This function is called periodically during operator control. */
+
   @Override
   public void teleopPeriodic() {
-    //There are three ways to controll a differential Drive Train, these being Arcade Drive, Tank Drive, And Curvature Drive
+    //so here is where you will want to define HOW the robot drives. I will give you what to put, but i wont tell you how to assemble it
+
+
+    //HINT: Java uses the ".(DOT)" operator, this is used to Connect a variable to a command, ex: variable.command;
+    //mecanumDrive : this is the VARIABLE for all the motors and this controlls all the motors; but it must be told how to drive
+    //ONLY USE IF DOING MECANUM DRIVE
+
+    //differentialDrive : this VARIABLE will group the left and right side motors to allow it to drive using Arcade, Tank, Or Curvature
+    //ONLY USE IF DOING ARCADE, TANK, OR CURVATURE
+
+    //arcadeDrive : COMMAND where on input controlls speed and one controlls rotation
+
+    //tankDrive : COMMAND where both sticks controll speed and turns by using a negative input on one stick
+
+    //curvatureDrive : COMMAND similar to arcade drive, but it drives like a car, means it cannot rotate in place
+
+    //driveCartesianDrive() : this is a COMMAND that allows for the robot to move Forwards, Sidways and Rotate
+
+    //GamePad : this is the VARIABLE for the xbox controller you use
+
+    //getLeftX/Y() or getRightX/Y() : This COMMAND tells the robot which of the joysticks axis' control what.
+
+    //Example for joysticks ; If we wanted to have the left joystick move the robot forwards and backwards, we would do this
+
+    //-> Variable.Command(-gamepad.getLeftY() * 0.2): that last little math part Kaden Will Do!
+
+
+    //Note: Remember that up and down are y axis, and left and right are x axis
+    //Note2: Either use MecanumDrive, Arcade, or Tank. DO NOT use multiple or else it will not Work!
+
+
+    //Try it yourself :)
+
+
+
+
+
+
+
+
+
+
     
-    //How this command Works
-    //first by establishing the diff. drive motors(Differentiall Drive)
-    //then you say which type of drive you want(This case its arcade drive)
-    //arcade drive works like this arcadeDrive(Double xSpeed, double yspeed)
-    //this means that whatever you put in the first slot will input speed, and the second will controll turning speed
-      differentialDrive.arcadeDrive(kPlaneJoystick.getY() * 0.4, kPlaneJoystick.getX() * 0.4);
-      kMultiMotorDrive.arcadeDrive(-kXbController.getLeftY() * 0.4, kXbController.getRightX() * 0.4);
-
-
-    //this is how you do Tank Drive
-      differentialDrive.tankDrive(-kXbController.getLeftY() * 0.6, -kXbController.getRightY() * 0.6);
-    //notice the differences?
-
-    //this is how you do curvature Drive
-      kMultiMotorDrive.curvatureDrive(-kXbController.getLeftY() * 0.6, kXbController.getRightX() * 0.5, kXbController.getXButton());
-    //curvature is differnt from arcade becuase it doesnt allow for the robot to turn in place(Unless pressing X), rather it turns like a car does
-
-
-
-    //This is how you see the encoders date
-    //Ignore this because its usless here :)
-    SmartDashboard.putNumber("Left Encoder Distance", leftEncoder.getDistance());
-    SmartDashboard.putNumber("Left Encoder Rate", leftEncoder.getRate());
-    SmartDashboard.putNumber("Right Encoder Distance", rigthEncoder.getDistance());
-    SmartDashboard.putNumber("Right Encoder Rate", rigthEncoder.getRate());
-
 
   }
 
-  /** This function is called once when the robot is disabled. */
+
   @Override
   public void disabledInit() {
-    differentialDrive.stopMotor();
-    kMultiMotorDrive.stopMotor();
+    //nothing goes here!
   }
 
-  /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {}
-//pp
+  public void disabledPeriodic() {
+    //Too Far go back up!
+  }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//You Found Kadens Easter Egg 🥚:) its a special drive system!
+//differentialDrive.arcadeDrive((-gamepad.getLeftTriggerAxis() + gamepad.getRightTriggerAxis()) * 0.2, gamepad.getRightX() * 0.2);
+//but seriously why are you down this far, go back up
+
+
+/**                𝑶𝒌 𝑰 𝑷𝒖𝒍𝒍 𝒖𝒑
+*            ⢀⣞⣆⢀⣠⢶⡄
+*   ⢀⣀⡤⠤⠖⠒⠋⠉⣉⠉⠹⢫⠾⣄⡀
+* ⢠⡏⢰⡴   ⠉⠙⠟⠃    ⠈⠙⠦⣄⡀⢀⣀⣠⡤⠤⠶⠒⠒⢿⠋⠈ ⣒⡒⠲⠤⣄⡀
+*⢸ ⢸⠁                  ⠈⠉ ⠴⠂⣀  ⣴⡄⠉⢷⡄⠚ ⢤⣒⠦⠉⠳⣄⡀
+*⠸⡄⠼⠦                                  ⣄⡂⠠⣀⠐⠍⠂⠙⣆
+* ⠙⠦⢄⣀⣀⣀⣀⡀ ⢷ ⢦                           ⠰⡇⠠⣀⠱⠘⣧
+*        ⠈⠉⢷⣧⡄⢼ ⢀                           ⠈ ⡈ ⢄⢸⡄
+*            ⠙⣿⡀⠃⠘⠂⠲⡀                        ⠙ ⡈⢘⡇
+*             ⠈⢫⡑⠣⠰ ⢁⢀⡀                        ⠁⣸⠁
+*               ⠙⣯⠂⡀⢨ ⠃           ⢀⡆⣾⡄     ⣀⠐⠁⡴⠁
+*                ⠈⣧⡈⡀⢠⣧⣤⣀⣀⡀⢀⡀  ⢀⣼⣀⠉⡟ ⢀⡀⠘⢓⣤⡞⠁
+*                   ⢺⡁⢁⣸⡏    ⠁ ⠉⠉⠁⠹⡟⢢⢱ ⢸⣷⠶⠻⡇
+*                  ⢈⡏⠈⡟⡇           ⠑⢄⠁ ⠻⣧  ⣹⠁
+*              ⣀⣀⡤⠚⠃⣰⣥⠇           ⢀⣾⠼⢙⡷⡻ ⡼⠁
+*            ⠈⠟⠿⡿⠕⠊⠉         ⣠⣴⣶⣾⠉⣹⣷⣟⣚⣁⡼⠁
+*                              ⠉⠙⠋⠁
+*     
+*⠀             ⠸⣶⣦⡄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⢀⣀⣀⣀⡀⢀⠀⢹⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⠙⠻⣿⣿⣷⣄⠨⣿⣿⣿⡌⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣷⣿⣿⣿⣿⣿⣶⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⣠⣴⣾⣿⣮⣝⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠈⠉⠙⠻⢿⣿⣿⣿⣿⣿⣿⠟⣹⣿⡿⢿⣿⣿⣬⣶⣶⡶⠦⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⣀⣢⣙⣻⢿⣿⣿⣿⠎⢸⣿⠕⢹⣿⣿⡿⣛⣥⣀⣀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⠈⠉⠛⠿⡏⣿⡏⠿⢄⣜⣡⠞⠛⡽⣸⡿⣟⡋⠉⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⠾⠿⣿⠁⠀⡄⠀⠀⠰⠾⠿⠛⠓⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠠⢐⢉⢷⣀⠛⠠⠐⠐⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+*⠀⠀⠀⠀⣀⣠⣴⣶⣿⣧⣾⠡⠼⠎⢎⣋⡄⠆⠀⠱⡄⢉⠃⣦⡤⡀⠀⠀⠀⠀
+*⠀⠀⠐⠙⠻⢿⣿⣿⣿⣿⣿⣿⣄⡀⠀⢩⠀⢀⠠⠂⢀⡌⠀⣿⡇⠟⠀⠀⢄⠀
+*⠀⣴⣇⠀⡇⠀⠸⣿⣿⣿⣿⣽⣟⣲⡤⠀⣀⣠⣴⡾⠟⠀⠀⠟⠀⠀⠀⠀⡰⡀
+*⣼⣿⠋⢀⣇⢸⡄⢻⣟⠻⣿⣿⣿⣿⣿⣿⠿⡿⠟⢁⠀⠀⠀⠀⠀⢰⠀⣠⠀⠰
+*⢸⣿⡣⣜⣿⣼⣿⣄⠻⡄⡀⠉⠛⠿⠿⠛⣉⡤⠖⣡⣶⠁⠀⠀⠀⣾⣶⣿⠐⡀
+*⣾⡇⠈⠛⠛⠿⣿⣿⣦⠁⠘⢷⣶⣶⡶⠟⢋⣠⣾⡿⠃⠀⠀⠀⠰⠛⠉⠉⠀⠀⠀
+*/
