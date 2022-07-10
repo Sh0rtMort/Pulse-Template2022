@@ -1,9 +1,15 @@
-
+//Mission:Find the Easter Egg!
 
 package frc.robot;
 
 import java.sql.Time;
 
+import org.opencv.features2d.FlannBasedMatcher;
+
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -13,6 +19,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 
 /**                                                  Welcome To Team 2531 "RoboHawks" Intro To Java Programming!
@@ -43,8 +50,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 *  Here are the steps i use to make the Robot, Ill say if there already Done :)
 *
 *  #1 Define Motors, Encoders, Drivetrains, MotorControllerGroups, and Controllers(This is done cause its boring) ->
-*  #2
-*
+*  #2 Start making a command for the drivetrain that uses the motors previously defined
+*  #3 Connect the drivetrain to a controller in the TeleopInit, then get working on Auto
 */
 
 
@@ -55,6 +62,12 @@ public class Robot extends TimedRobot {
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
+  private NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+  private NetworkTableEntry tv = table.getEntry("tv");
+  private NetworkTableEntry tx = table.getEntry("tx");
+  private NetworkTableEntry ty = table.getEntry("ty");
+  private NetworkTableEntry ta = table.getEntry("ta");
+  private NetworkTableEntry ledMode = table.getEntry("ledMode");
 
   //this creates a controller to be used in TeleOp
   private XboxController gamepad = new XboxController(0);
@@ -67,6 +80,11 @@ public class Robot extends TimedRobot {
   private Talon frontRight = new Talon(31);
   private Talon backRight = new Talon(30);
   private Talon backLeft = new Talon(33);
+
+  private Encoder leftEncoder = new Encoder(0, 1);
+  private Encoder rightEncoder = new Encoder(2, 3);
+
+
 
   //this connects the motors so that differential drive works
   private MotorControllerGroup leftGroup = new MotorControllerGroup(frontLeft, backLeft);
@@ -87,6 +105,21 @@ public class Robot extends TimedRobot {
     rightGroup.setInverted(false);
   }
 
+  private void setLightsEnabled(boolean enabled) {
+    // 0 - pipeline default
+    // 1 - force off
+    // 2 - force blink
+    // 3 - force on
+    int newMode = enabled ? 3 : 0;
+    if (newMode != ledMode.getNumber(0).intValue()) {
+      System.out.println("Limelight enabled: " + enabled);
+      ledMode.setNumber(newMode);
+    }
+  }
+
+  private void motors(double speed, double rotate) {
+    differentialDrive.arcadeDrive(speed, rotate);
+  }
   
 
   @Override
@@ -94,6 +127,11 @@ public class Robot extends TimedRobot {
 
   }
 
+
+
+
+
+  
   
 
 
@@ -104,6 +142,10 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
     timer.reset();
     timer.start();
+    leftEncoder.reset();
+    rightEncoder.reset();
+    leftEncoder.setReverseDirection(true);
+    rightEncoder.setReverseDirection(false);
   }
 
  //here is where you will actually have fun programming
@@ -111,7 +153,7 @@ public class Robot extends TimedRobot {
 
  //Explanation : Here is the autonomous command, Every Year; the first 15 seconds of every match is a period called autonomous period
  //during this, the robots all run on pre-programmed code, no human input
- //this is what I(Kaden) find facinating
+ //this is what I(Kaden) find fascinating
  //Here is one of our teams autos: "https://www.youtube.com/embed/kirFwqO6Rp4?start=5" 
 
   @Override
@@ -121,7 +163,20 @@ public class Robot extends TimedRobot {
         // Put custom auto code here
         //Custom code is what will run when "Custom Auto" is selected
         //HINT: use an if() {then} statement to run the code and use the timer.get() function as a parameter
-
+        //Ill have a little fun too ≖‿≖ ->
+        if (timer.get() <= 2) {
+          motors(-0.2, 0);
+        } else if (timer.get() < 3 && timer.get() >= 2) {
+          motors(0, 0.2);
+        } else if (timer.get() < 6 && timer.get() >= 3) {
+          motors(0.3, 0.2);
+        } else if (timer.get() < 7 && timer.get() >= 6) {
+          setLightsEnabled(true);
+        } else if (timer.get() < 8 && timer.get() >= 7) {
+          setLightsEnabled(false);
+        } else if (timer.get() < 15 && timer.get() >=8) {
+          motors(0, 0.4);
+        }
 
         break;
       case kDefaultAuto:
@@ -132,7 +187,7 @@ public class Robot extends TimedRobot {
       if (timer.get() < 2) {
         differentialDrive.curvatureDrive(0.4, 0.2, false);
       } else {
-        differentialDrive.curvatureDrive(0, 0.1, true);
+        differentialDrive.curvatureDrive(0, 0, true);
       }
         break;
       //What this does
@@ -171,7 +226,7 @@ public class Robot extends TimedRobot {
 
     //driveCartesianDrive() : this is a COMMAND that allows for the robot to move Forwards, Sidways and Rotate
 
-    //GamePad : this is the VARIABLE for the xbox controller you use
+    //gamePad : this is the VARIABLE for the xbox controller you use
 
     //getLeftX/Y() or getRightX/Y() : This COMMAND tells the robot which of the joysticks axis' control what.
 
@@ -189,6 +244,17 @@ public class Robot extends TimedRobot {
 
 
 
+
+
+
+
+    
+    //TRIAL;; ignore
+    mecanumDrive.driveCartesian(
+      -gamepad.getLeftY() * 0.2, 
+      gamepad.getLeftX() * 0.2, 
+      gamepad.getRightX() * 0.2
+      );
 
 
 
@@ -255,21 +321,4 @@ public class Robot extends TimedRobot {
 *              ⣀⣀⡤⠚⠃⣰⣥⠇           ⢀⣾⠼⢙⡷⡻ ⡼⠁
 *            ⠈⠟⠿⡿⠕⠊⠉         ⣠⣴⣶⣾⠉⣹⣷⣟⣚⣁⡼⠁
 *                              ⠉⠙⠋⠁
-*     
-*⠀             ⠸⣶⣦⡄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⢀⣀⣀⣀⡀⢀⠀⢹⣿⣿⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⠙⠻⣿⣿⣷⣄⠨⣿⣿⣿⡌⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⠀⠀⠘⣿⣿⣿⣷⣿⣿⣿⣿⣿⣶⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⣠⣴⣾⣿⣮⣝⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠈⠉⠙⠻⢿⣿⣿⣿⣿⣿⣿⠟⣹⣿⡿⢿⣿⣿⣬⣶⣶⡶⠦⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⣀⣢⣙⣻⢿⣿⣿⣿⠎⢸⣿⠕⢹⣿⣿⡿⣛⣥⣀⣀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⠈⠉⠛⠿⡏⣿⡏⠿⢄⣜⣡⠞⠛⡽⣸⡿⣟⡋⠉⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⠀⠀⠀⠰⠾⠿⣿⠁⠀⡄⠀⠀⠰⠾⠿⠛⠓⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠠⢐⢉⢷⣀⠛⠠⠐⠐⠠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-*⠀⠀⠀⠀⣀⣠⣴⣶⣿⣧⣾⠡⠼⠎⢎⣋⡄⠆⠀⠱⡄⢉⠃⣦⡤⡀⠀⠀⠀⠀
-*⠀⠀⠐⠙⠻⢿⣿⣿⣿⣿⣿⣿⣄⡀⠀⢩⠀⢀⠠⠂⢀⡌⠀⣿⡇⠟⠀⠀⢄⠀
-*⠀⣴⣇⠀⡇⠀⠸⣿⣿⣿⣿⣽⣟⣲⡤⠀⣀⣠⣴⡾⠟⠀⠀⠟⠀⠀⠀⠀⡰⡀
-*⣼⣿⠋⢀⣇⢸⡄⢻⣟⠻⣿⣿⣿⣿⣿⣿⠿⡿⠟⢁⠀⠀⠀⠀⠀⢰⠀⣠⠀⠰
-*⢸⣿⡣⣜⣿⣼⣿⣄⠻⡄⡀⠉⠛⠿⠿⠛⣉⡤⠖⣡⣶⠁⠀⠀⠀⣾⣶⣿⠐⡀
-*⣾⡇⠈⠛⠛⠿⣿⣿⣦⠁⠘⢷⣶⣶⡶⠟⢋⣠⣾⡿⠃⠀⠀⠀⠰⠛⠉⠉⠀⠀⠀
 */
