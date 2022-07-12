@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.motorcontrol.Talon;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 
 /**                                                  Welcome To Team 2531 "RoboHawks" Intro To Java Programming!
@@ -47,30 +48,27 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 *
 *
 *  How this page will work : There are some less cool things about robotics programming, so i have already filled those out to keep this fun
-*  Here are the steps i use to make the Robot, Ill say if there already Done :)
+*  Here are the steps i use to make the robot, Ill say if there already done :)
 *
 *  #1 Define Motors, Encoders, Drivetrains, MotorControllerGroups, and Controllers(This is done cause its boring) ->
-*  #2 Start making a command for the drivetrain that uses the motors previously defined
-*  #3 Connect the drivetrain to a controller in the TeleopInit, then get working on Auto
+*  #2 Start making a command for the drivetrain that uses the motors previously defined(you will do most of this!)
+*  #3 Connect the drivetrain to a controller in the TeleopInit, then get working on Auto(You are doing All of this)
 */
 
 
 
 public class Robot extends TimedRobot {
+                                                                 //This is step #1
   //Ignore this Stuff, Its Booooooring(But very very needed!) :(
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
   private NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
-  private NetworkTableEntry tv = table.getEntry("tv");
-  private NetworkTableEntry tx = table.getEntry("tx");
-  private NetworkTableEntry ty = table.getEntry("ty");
-  private NetworkTableEntry ta = table.getEntry("ta");
   private NetworkTableEntry ledMode = table.getEntry("ledMode");
 
   //this creates a controller to be used in TeleOp
-  private XboxController gamepad = new XboxController(0);
+  private XboxController kXboxController = new XboxController(0);
 
   //this creates a timer to be used in Auto code
   private Timer timer = new Timer();
@@ -78,20 +76,17 @@ public class Robot extends TimedRobot {
   //these sould be TalonFX but i cant install the pheonix library cause norton security
   private Talon frontLeft = new Talon(32);
   private Talon frontRight = new Talon(31);
-  private Talon backRight = new Talon(30);
-  private Talon backLeft = new Talon(33);
+  private Talon backRight = new Talon(33);
+  private Talon backLeft = new Talon(30);
 
-  private Encoder leftEncoder = new Encoder(0, 1);
-  private Encoder rightEncoder = new Encoder(2, 3);
-
-
+  private double universalDriveSpeed = 0.3;
 
   //this connects the motors so that differential drive works
   private MotorControllerGroup leftGroup = new MotorControllerGroup(frontLeft, backLeft);
   private MotorControllerGroup rightGroup = new MotorControllerGroup(frontRight, backRight);
 
   //this enables mecanum drive using all four wheels independently
-  private MecanumDrive mecanumDrive = new MecanumDrive(frontLeft, frontRight, backLeft, backRight);
+  private MecanumDrive mecanumDrive = new MecanumDrive(frontLeft, backLeft, frontLeft, frontRight);
   //this enables differential drive all four wheels dependently, used for 'basic' drives
   private DifferentialDrive differentialDrive = new DifferentialDrive(leftGroup, rightGroup);
   
@@ -117,14 +112,14 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void motors(double speed, double rotate) {
+  private void kAutoDriveControl(double speed, double rotate) {
     differentialDrive.arcadeDrive(speed, rotate);
   }
   
 
   @Override
   public void robotPeriodic() {
-
+    //Leave Blank
   }
 
 
@@ -142,10 +137,6 @@ public class Robot extends TimedRobot {
     System.out.println("Auto selected: " + m_autoSelected);
     timer.reset();
     timer.start();
-    leftEncoder.reset();
-    rightEncoder.reset();
-    leftEncoder.setReverseDirection(true);
-    rightEncoder.setReverseDirection(false);
   }
 
  //here is where you will actually have fun programming
@@ -159,23 +150,23 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
-      case kCustomAuto:
+      case kCustomAuto:                            //this is the last step of part #3
         // Put custom auto code here
         //Custom code is what will run when "Custom Auto" is selected
         //HINT: use an if() {then} statement to run the code and use the timer.get() function as a parameter
         //Ill have a little fun too ≖‿≖ ->
         if (timer.get() <= 2) {
-          motors(-0.2, 0);
+          kAutoDriveControl(-0.2, 0);
         } else if (timer.get() < 3 && timer.get() >= 2) {
-          motors(0, 0.2);
+          kAutoDriveControl(0, 0.2);
         } else if (timer.get() < 6 && timer.get() >= 3) {
-          motors(0.3, 0.2);
+          kAutoDriveControl(0.3, 0.2);
         } else if (timer.get() < 7 && timer.get() >= 6) {
           setLightsEnabled(true);
         } else if (timer.get() < 8 && timer.get() >= 7) {
-          setLightsEnabled(false);
-        } else if (timer.get() < 15 && timer.get() >=8) {
-          motors(0, 0.4);
+          setLightsEnabled(false);  
+        } else if (timer.get() < 15 && timer.get() >= 8) {
+          kAutoDriveControl(0, 0.4);
         }
 
         break;
@@ -225,14 +216,15 @@ public class Robot extends TimedRobot {
     //curvatureDrive : COMMAND similar to arcade drive, but it drives like a car, means it cannot rotate in place
 
     //driveCartesianDrive() : this is a COMMAND that allows for the robot to move Forwards, Sidways and Rotate
+    //ONLY USED FOR MECANUM
 
-    //gamePad : this is the VARIABLE for the xbox controller you use
+    //kXboxController : this is the VARIABLE for the xbox controller you use
 
     //getLeftX/Y() or getRightX/Y() : This COMMAND tells the robot which of the joysticks axis' control what.
 
     //Example for joysticks ; If we wanted to have the left joystick move the robot forwards and backwards, we would do this
 
-    //-> Variable.Command(-gamepad.getLeftY() * 0.2): that last little math part Kaden Will Do!
+    //-> Variable.Command(-kXboxController.getLeftY() * 0.2): that last little math part Kaden Will Do!
 
 
     //Note: Remember that up and down are y axis, and left and right are x axis
@@ -242,23 +234,19 @@ public class Robot extends TimedRobot {
     //Try it yourself :)
 
 
-
-
-
-
-
-
-    
-    //TRIAL;; ignore
+    //Test;; ignore
     mecanumDrive.driveCartesian(
-      -gamepad.getLeftY() * 0.2, 
-      gamepad.getLeftX() * 0.2, 
-      gamepad.getRightX() * 0.2
+      kXboxController.getLeftY() * universalDriveSpeed, 
+      kXboxController.getLeftX() * universalDriveSpeed, 
+      kXboxController.getRightX() * universalDriveSpeed
       );
-
-
-
-
+    /**test Select 
+    differentialDrive.curvatureDrive(
+      kXboxController.getLeftY() * universalDriveSpeed, 
+      kXboxController.getRightX() * universalDriveSpeed, 
+      kXboxController.getLeftBumperPressed()
+      );
+    */
 
 
     
@@ -300,7 +288,7 @@ public class Robot extends TimedRobot {
 
 
 //You Found Kadens Easter Egg 🥚:) its a special drive system!
-//differentialDrive.arcadeDrive((-gamepad.getLeftTriggerAxis() + gamepad.getRightTriggerAxis()) * 0.2, gamepad.getRightX() * 0.2);
+//differentialDrive.arcadeDrive((-kXboxController.getLeftTriggerAxis() + kXboxController.getRightTriggerAxis()) * 0.2, kXboxController.getRightX() * 0.2);
 //but seriously why are you down this far, go back up
 
 
