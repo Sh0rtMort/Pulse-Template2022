@@ -4,6 +4,9 @@ package frc.robot;
 
 import java.sql.Time;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+
 import org.opencv.features2d.FlannBasedMatcher;
 
 import edu.wpi.first.networktables.NetworkTable;
@@ -57,8 +60,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 
 
-public class Robot extends TimedRobot {
-                                                                 //This is step #1
+public class Robot extends TimedRobot {                          //This is all of step #1
   //Ignore this Stuff, Its Booooooring(But very very needed!) :(
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
@@ -74,10 +76,10 @@ public class Robot extends TimedRobot {
   private Timer timer = new Timer();
 
   //these sould be TalonFX but i cant install the pheonix library cause norton security
-  private Talon frontLeft = new Talon(32);
-  private Talon frontRight = new Talon(31);
-  private Talon backRight = new Talon(33);
-  private Talon backLeft = new Talon(30);
+  private WPI_TalonFX frontLeft = new WPI_TalonFX(32);
+  private WPI_TalonFX frontRight = new WPI_TalonFX(31);
+  private WPI_TalonFX backRight = new WPI_TalonFX(33);
+  private WPI_TalonFX backLeft = new WPI_TalonFX(30);
 
   private double universalDriveSpeed = 0.3;
 
@@ -96,6 +98,8 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    frontLeft.setInverted(true);
+    backLeft.setInverted(true);
     leftGroup.setInverted(true);
     rightGroup.setInverted(false);
   }
@@ -107,7 +111,6 @@ public class Robot extends TimedRobot {
     // 3 - force on
     int newMode = enabled ? 3 : 0;
     if (newMode != ledMode.getNumber(0).intValue()) {
-      System.out.println("Limelight enabled: " + enabled);
       ledMode.setNumber(newMode);
     }
   }
@@ -198,7 +201,7 @@ public class Robot extends TimedRobot {
 
 
   @Override
-  public void teleopPeriodic() {
+  public void teleopPeriodic() {            //This is Step #2
     //so here is where you will want to define HOW the robot drives. I will give you what to put, but i wont tell you how to assemble it
 
 
